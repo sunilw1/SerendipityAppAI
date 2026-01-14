@@ -1,0 +1,79 @@
+# Serendipity AI Backend - Docker Compose
+# ==========================================
+# Development and local testing setup
+
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: serendipity-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../dataset:/app/dataset:ro
+      - api-logs:/app/logs
+    environment:
+      - APP_ENV=development
+      - DEBUG=true
+      - DATABASE_URL=mysql+aiomysql://root:serendipity@db:3306/serendipity
+      - DATASET_PATH=/app/dataset
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # MySQL database (Phase 2+)
+  db:
+    image: mysql:8.0
+    container_name: serendipity-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=serendipity
+      - MYSQL_DATABASE=serendipity
+      - MYSQL_USER=serendipity
+      - MYSQL_PASSWORD=serendipity
+    volumes:
+      - db-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pserendipity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Redis cache (Phase 2+)
+  redis:
+    image: redis:7-alpine
+    container_name: serendipity-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  redis-data:
+  api-logs:
+
+networks:
+  default:
+    name: serendipity-network
