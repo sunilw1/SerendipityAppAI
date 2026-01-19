@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # Data Ingestion Settings
     # -------------------------------------------------------------------------
-    dataset_path: Path = Field(default=Path("../dataset"))
+    dataset_path: Path = Field(default=Path("dataset"))
     raw_data_file: str = "trips-500-for-different_users.csv"
     ingestion_batch_size: int = Field(default=1000, ge=100, le=10000)
     max_records_per_request: int = Field(default=10000, ge=100, le=100000)
