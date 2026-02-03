@@ -7,11 +7,12 @@ Aggregates all v1 API routes.
 Phase 1: Data ingestion, confidence scoring, baselines
 Phase 2: Behavioral intelligence, anomaly detection, risk scoring
 Phase 2 Viz: Visualization and analytics endpoints
+Phase 3: Predictive intelligence, GPU inference, retraining
 """
 
 from fastapi import APIRouter
 
-from app.api.v1.routes import health, ingest, intelligence, phase2, phase2_visualization
+from app.api.v1.routes import health, ingest, intelligence, phase2, phase2_visualization, phase3
 
 # Create main v1 router
 api_router = APIRouter()
@@ -50,4 +51,10 @@ api_router.include_router(
     phase2_visualization.router,
     prefix="/phase2/viz",
     tags=["Phase 2 - Visualization"],
+)
+
+# Phase 3: Predictive Intelligence & GPU Inference
+api_router.include_router(
+    phase3.router,
+    tags=["Phase 3 - Predictive Intelligence"],
 )

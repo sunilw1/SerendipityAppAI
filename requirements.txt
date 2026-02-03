@@ -72,23 +72,45 @@ pytest-cov>=4.1.0
 python-dotenv>=1.0.0
 
 # =============================================================================
-# PHASE 2 - NVIDIA / GPU ACCELERATION (Optional)
+# PHASE 3 - GRADIENT BOOSTING
 # =============================================================================
-# Uncomment these when GPU optimization is needed:
-# torch>=2.0.0
+lightgbm>=4.2.0  # LightGBM for delay/threat prediction models
+
+# =============================================================================
+# PHASE 3 - ONNX MODEL EXPORT
+# =============================================================================
+onnx>=1.15.0  # ONNX model format
+onnxmltools>=1.12.0  # Convert sklearn/lightgbm to ONNX
+skl2onnx>=1.16.0  # sklearn to ONNX converter
+
+# =============================================================================
+# PHASE 3 - AWS INTEGRATION
+# =============================================================================
+boto3>=1.34.0  # AWS SDK for S3 model storage
+
+# =============================================================================
+# PHASE 3 - NVIDIA / GPU ACCELERATION
+# =============================================================================
+# Install these on GPU-enabled instances:
+# torch>=2.0.0  # PyTorch for GPU inference
 # tensorrt>=8.6.0  # NVIDIA TensorRT for inference optimization
-# torch-tensorrt>=1.4.0  # PyTorch TensorRT integration
+# torch-tensorrt>=2.1.0  # PyTorch TensorRT integration
+# pycuda>=2022.2  # CUDA Python bindings
 
 # =============================================================================
-# PHASE 2 - TRITON INFERENCE SERVER (Optional)
+# PHASE 3 - TRITON INFERENCE SERVER
 # =============================================================================
-# Uncomment when scale requires:
-# tritonclient[all]>=2.40.0  # Triton client library
+# Install on production GPU servers:
+# tritonclient[all]>=2.40.0  # Triton client library (gRPC + HTTP)
 
 # =============================================================================
-# PHASE 2 - ADDITIONAL ML DEPENDENCIES
+# PHASE 3 - DEMO DASHBOARD
+# =============================================================================
+streamlit>=1.30.0  # Interactive demo dashboard
+
+# =============================================================================
+# PHASE 2 - ADDITIONAL ML DEPENDENCIES (Optional)
 # =============================================================================
 # joblib is included with scikit-learn
-# The following are optional for advanced use cases:
 # hdbscan>=0.8.33  # For clustering (alternative to scipy hierarchical)
 # pyod>=1.1.0  # Python Outlier Detection library (optional alternative)

@@ -1,0 +1,43 @@
+name: "threat_classifier"
+platform: "tensorrt_plan"
+max_batch_size: 32
+
+input [
+  {
+    name: "input"
+    data_type: TYPE_FP32
+    dims: [ 16 ]
+  }
+]
+
+output [
+  {
+    name: "output"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16 ]
+  max_queue_delay_microseconds: 100
+}
+
+version_policy: { latest { num_versions: 2 }}
+
+optimization {
+  input_pinned_memory { enable: true }
+  output_pinned_memory { enable: true }
+  cuda {
+    graphs: true
+    busy_wait_events: true
+  }
+}

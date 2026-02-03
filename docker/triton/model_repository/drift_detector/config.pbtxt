@@ -1,0 +1,53 @@
+name: "drift_detector"
+platform: "tensorrt_plan"
+max_batch_size: 16
+
+input [
+  {
+    name: "current_features"
+    data_type: TYPE_FP32
+    dims: [ 32 ]
+  },
+  {
+    name: "baseline_features"
+    data_type: TYPE_FP32
+    dims: [ 32 ]
+  }
+]
+
+output [
+  {
+    name: "drift_score"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  },
+  {
+    name: "drift_signals"
+    data_type: TYPE_FP32
+    dims: [ 6 ]
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 4, 8 ]
+  max_queue_delay_microseconds: 100
+}
+
+version_policy: { latest { num_versions: 2 }}
+
+optimization {
+  input_pinned_memory { enable: true }
+  output_pinned_memory { enable: true }
+  cuda {
+    graphs: true
+    busy_wait_events: true
+  }
+}
