@@ -89,6 +89,23 @@ class InferenceBackend(str, Enum):
     TRITON = "triton"
 
 
+class ImpactSeverity(str, Enum):
+    """Crash/fall impact severity levels."""
+    NONE = "none"
+    MINOR = "minor"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+    CRITICAL = "critical"
+
+
+class BatteryStatus(str, Enum):
+    """Battery health status levels."""
+    HEALTHY = "healthy"
+    LOW = "low"
+    CRITICAL = "critical"
+    CHARGING = "charging"
+
+
 # =============================================================================
 # EXTERNAL DATA SCHEMAS
 # =============================================================================
@@ -685,3 +702,135 @@ class InferenceHealthResponse(BaseModel):
         description="Health issues"
     )
     checked_at: datetime = Field(..., description="Check timestamp")
+
+
+# =============================================================================
+# CRASH / FALL DETECTION SCHEMAS
+# =============================================================================
+
+class AccelerometerReading(BaseModel):
+    """Single accelerometer reading from device."""
+    x: float = Field(..., description="X-axis acceleration (m/s²)")
+    y: float = Field(..., description="Y-axis acceleration (m/s²)")
+    z: float = Field(..., description="Z-axis acceleration (m/s²)")
+    timestamp: datetime = Field(..., description="Reading timestamp")
+
+
+class CrashDetectionRequest(BaseModel):
+    """Request for crash detection analysis."""
+    user_id: int = Field(..., description="User ID")
+    readings: List[AccelerometerReading] = Field(
+        ..., min_length=5, description="Accelerometer readings (minimum 5)"
+    )
+    speed_kmh: Optional[float] = Field(None, ge=0, description="Current speed in km/h")
+    lat: Optional[float] = Field(None, description="Current latitude")
+    lon: Optional[float] = Field(None, description="Current longitude")
+    device_type: str = Field(default="mobile", description="Device type")
+
+
+class CrashDetectionResult(BaseModel):
+    """Result of crash detection analysis."""
+    model_config = ConfigDict(frozen=True)
+
+    detection_id: str = Field(..., description="Unique detection ID")
+    user_id: int = Field(..., description="User ID")
+    crash_detected: bool = Field(..., description="Whether a crash was detected")
+    severity: ImpactSeverity = Field(..., description="Impact severity")
+    confidence: float = Field(..., ge=0, le=1, description="Detection confidence")
+    peak_g_force: float = Field(..., ge=0, description="Peak G-force recorded")
+    impact_duration_ms: float = Field(default=0, ge=0, description="Impact duration in ms")
+    post_impact_motion: bool = Field(default=True, description="Motion detected after impact")
+    speed_at_impact_kmh: Optional[float] = Field(None, description="Speed at time of impact")
+    location: Optional[Tuple[float, float]] = Field(None, description="Impact location (lat, lon)")
+    explanation: str = Field(..., description="Human-readable explanation")
+    recommended_actions: List[str] = Field(default_factory=list, description="Recommended actions")
+    detected_at: datetime = Field(..., description="Detection timestamp")
+    alert_triggered: bool = Field(default=False, description="Whether alert was triggered")
+
+
+class CrashDetectionResponse(BaseModel):
+    """Response for crash detection."""
+    success: bool = Field(..., description="Detection success")
+    result: Optional[CrashDetectionResult] = Field(None, description="Detection result")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+class FallDetectionRequest(BaseModel):
+    """Request for fall detection analysis."""
+    user_id: int = Field(..., description="User ID")
+    readings: List[AccelerometerReading] = Field(
+        ..., min_length=5, description="Accelerometer readings (minimum 5)"
+    )
+    gyroscope_data: Optional[List[Dict]] = Field(
+        None, description="Optional gyroscope readings"
+    )
+    user_age: Optional[int] = Field(None, ge=0, le=120, description="User age for risk assessment")
+    lat: Optional[float] = Field(None, description="Current latitude")
+    lon: Optional[float] = Field(None, description="Current longitude")
+
+
+class FallDetectionResult(BaseModel):
+    """Result of fall detection analysis."""
+    model_config = ConfigDict(frozen=True)
+
+    detection_id: str = Field(..., description="Unique detection ID")
+    user_id: int = Field(..., description="User ID")
+    fall_detected: bool = Field(..., description="Whether a fall was detected")
+    severity: ImpactSeverity = Field(..., description="Fall severity")
+    confidence: float = Field(..., ge=0, le=1, description="Detection confidence")
+    free_fall_duration_ms: float = Field(default=0, ge=0, description="Free-fall duration in ms")
+    impact_g_force: float = Field(..., ge=0, description="Impact G-force")
+    post_fall_stationary: bool = Field(default=False, description="User stationary after fall")
+    stationary_duration_seconds: float = Field(default=0, ge=0, description="Time stationary after fall")
+    location: Optional[Tuple[float, float]] = Field(None, description="Fall location (lat, lon)")
+    explanation: str = Field(..., description="Human-readable explanation")
+    recommended_actions: List[str] = Field(default_factory=list, description="Recommended actions")
+    detected_at: datetime = Field(..., description="Detection timestamp")
+    alert_triggered: bool = Field(default=False, description="Whether alert was triggered")
+
+
+class FallDetectionResponse(BaseModel):
+    """Response for fall detection."""
+    success: bool = Field(..., description="Detection success")
+    result: Optional[FallDetectionResult] = Field(None, description="Detection result")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# =============================================================================
+# BATTERY MONITORING SCHEMAS
+# =============================================================================
+
+class BatteryReportRequest(BaseModel):
+    """Battery status report from device."""
+    user_id: int = Field(..., description="User ID")
+    battery_level: float = Field(..., ge=0, le=100, description="Battery level percentage")
+    is_charging: bool = Field(default=False, description="Whether device is charging")
+    battery_temperature: Optional[float] = Field(None, description="Battery temperature °C")
+    drain_rate_per_hour: Optional[float] = Field(None, ge=0, description="Drain rate %/hour")
+    lat: Optional[float] = Field(None, description="Current latitude")
+    lon: Optional[float] = Field(None, description="Current longitude")
+
+
+class BatteryAnalysisResult(BaseModel):
+    """Battery analysis result."""
+    model_config = ConfigDict(frozen=True)
+
+    user_id: int = Field(..., description="User ID")
+    battery_level: float = Field(..., ge=0, le=100, description="Current battery level")
+    status: BatteryStatus = Field(..., description="Battery status")
+    estimated_hours_remaining: Optional[float] = Field(
+        None, ge=0, description="Estimated hours until empty"
+    )
+    is_critical: bool = Field(default=False, description="Whether battery is critically low")
+    drain_rate_per_hour: Optional[float] = Field(None, description="Current drain rate %/hour")
+    explanation: str = Field(..., description="Human-readable explanation")
+    alert_triggered: bool = Field(default=False, description="Whether alert was triggered")
+    recommended_actions: List[str] = Field(default_factory=list, description="Recommended actions")
+    analyzed_at: datetime = Field(..., description="Analysis timestamp")
+
+
+class BatteryAnalysisResponse(BaseModel):
+    """Response for battery analysis."""
+    success: bool = Field(..., description="Analysis success")
+    result: Optional[BatteryAnalysisResult] = Field(None, description="Analysis result")
+    error: Optional[str] = Field(None, description="Error message if failed")

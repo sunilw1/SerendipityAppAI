@@ -12,7 +12,7 @@ Phase 3: Predictive intelligence, GPU inference, retraining
 
 from fastapi import APIRouter
 
-from app.api.v1.routes import health, ingest, intelligence, phase2, phase2_visualization, phase3
+from app.api.v1.routes import health, ingest, intelligence, phase2, phase2_visualization, phase3, safety
 
 # Create main v1 router
 api_router = APIRouter()
@@ -57,4 +57,11 @@ api_router.include_router(
 api_router.include_router(
     phase3.router,
     tags=["Phase 3 - Predictive Intelligence"],
+)
+
+# Phase 3: Safety Detection (Crash, Fall, Battery)
+api_router.include_router(
+    safety.router,
+    prefix="/phase3",
+    tags=["Phase 3 - Safety Detection"],
 )
