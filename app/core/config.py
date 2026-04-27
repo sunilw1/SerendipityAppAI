@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # Data Ingestion Settings
     # -------------------------------------------------------------------------
-    dataset_path: Path = Field(default=Path("../dataset"))
+    dataset_path: Path = Field(default=Path("dataset"))
     raw_data_file: str = "trips-500-for-different_users.csv"
     ingestion_batch_size: int = Field(default=1000, ge=100, le=10000)
     max_records_per_request: int = Field(default=10000, ge=100, le=100000)
@@ -118,8 +118,90 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     cuda_enabled: bool = Field(default=False, description="Enable CUDA acceleration")
     tensorrt_enabled: bool = Field(default=False, description="Enable TensorRT optimization")
-    triton_url: str = Field(default="localhost:8001", description="Triton Inference Server URL")
+    triton_url: str = Field(default="localhost:8001", description="Triton Inference Server URL (deprecated)")
     triton_model_repository: str = "/models"
+    
+    # -------------------------------------------------------------------------
+    # Phase 3 - Triton Inference Server
+    # -------------------------------------------------------------------------
+    triton_grpc_url: str = Field(
+        default="localhost:8001",
+        description="Triton gRPC endpoint"
+    )
+    triton_http_url: str = Field(
+        default="localhost:8000",
+        description="Triton HTTP endpoint"
+    )
+    triton_model_repo_s3: str = Field(
+        default="s3://serendipity-models/",
+        description="S3 path to Triton model repository"
+    )
+    
+    # -------------------------------------------------------------------------
+    # Phase 3 - External APIs
+    # -------------------------------------------------------------------------
+    openweathermap_api_key: Optional[str] = Field(
+        default=None,
+        description="OpenWeatherMap API key for weather data"
+    )
+    tomtom_api_key: Optional[str] = Field(
+        default=None,
+        description="TomTom API key for traffic data"
+    )
+    weather_cache_ttl_seconds: int = Field(
+        default=900,
+        description="Weather data cache TTL (15 minutes)"
+    )
+    traffic_cache_ttl_seconds: int = Field(
+        default=300,
+        description="Traffic data cache TTL (5 minutes)"
+    )
+    
+    # -------------------------------------------------------------------------
+    # Phase 3 - Retraining Settings
+    # -------------------------------------------------------------------------
+    retraining_enabled: bool = Field(
+        default=False,
+        description="Enable automatic model retraining"
+    )
+    retraining_schedule_cron: str = Field(
+        default="0 2 * * 0",
+        description="Cron schedule for model retraining (Weekly Sunday 2AM)"
+    )
+    model_output_dir: str = Field(
+        default="models",
+        description="Directory for model artifacts"
+    )
+    
+    # -------------------------------------------------------------------------
+    # Phase 3 - GPU Cost Guardrails
+    # -------------------------------------------------------------------------
+    gpu_cost_guardrail_enabled: bool = Field(
+        default=True,
+        description="Enable GPU cost monitoring and guardrails"
+    )
+    gpu_max_monthly_hours: int = Field(
+        default=744,
+        description="Maximum GPU hours per month (744 = 31 days * 24 hours)"
+    )
+    gpu_max_monthly_spend_usd: float = Field(
+        default=800.0,
+        description="Maximum GPU spend per month in USD (g5.xlarge ~$1/hr)"
+    )
+    gpu_min_monthly_spend_usd: float = Field(
+        default=500.0,
+        description="Minimum GPU spend target for NVIDIA requirement"
+    )
+    gpu_alert_threshold_percent: float = Field(
+        default=80.0,
+        ge=0,
+        le=100,
+        description="Alert when spend reaches this percentage of max"
+    )
+    gpu_instance_hourly_cost_usd: float = Field(
+        default=1.006,
+        description="Hourly cost of GPU instance (g5.xlarge = $1.006/hr)"
+    )
     
     # -------------------------------------------------------------------------
     # Security Settings
@@ -132,6 +214,8 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     s3_bucket: str = "serendipity-models"
     s3_region: str = "us-west-2"
+    aws_access_key_id: Optional[str] = Field(default=None, description="AWS access key")
+    aws_secret_access_key: Optional[str] = Field(default=None, description="AWS secret key")
     
     # -------------------------------------------------------------------------
     # Computed Properties

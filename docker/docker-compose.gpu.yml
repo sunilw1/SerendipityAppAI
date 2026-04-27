@@ -1,0 +1,182 @@
+# Serendipity AI Backend - GPU-Enabled Docker Compose
+# =====================================================
+# Phase 3 deployment with NVIDIA Triton Inference Server
+#
+# Requirements:
+# - NVIDIA Docker runtime (nvidia-docker2)
+# - NVIDIA GPU with CUDA support
+# - AWS g5.xlarge or similar instance
+
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: serendipity-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../dataset:/app/dataset:ro
+      - api-logs:/app/logs
+      - ../models:/app/models
+    environment:
+      - APP_ENV=production
+      - DEBUG=false
+      - DATABASE_URL=mysql+aiomysql://root:serendipity@db:3306/serendipity
+      - DATASET_PATH=/app/dataset
+      # Phase 3 settings
+      - CUDA_ENABLED=true
+      - TENSORRT_ENABLED=true
+      - TRITON_GRPC_URL=triton:8001
+      - TRITON_HTTP_URL=triton:8000
+      # External APIs (set these in .env file)
+      - OPENWEATHERMAP_API_KEY=${OPENWEATHERMAP_API_KEY}
+      - TOMTOM_API_KEY=${TOMTOM_API_KEY}
+      # S3 settings
+      - S3_BUCKET=${S3_BUCKET:-serendipity-models}
+      - S3_REGION=${S3_REGION:-us-west-2}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      triton:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+
+  # NVIDIA Triton Inference Server
+  triton:
+    image: nvcr.io/nvidia/tritonserver:23.12-py3
+    container_name: serendipity-triton
+    ports:
+      - "8001:8001"  # gRPC
+      - "8002:8000"  # HTTP (mapped to 8002 to avoid conflict)
+      - "8003:8002"  # Metrics
+    volumes:
+      - ./triton/model_repository:/models:ro
+    command: >
+      tritonserver
+      --model-repository=/models
+      --strict-model-config=false
+      --log-verbose=1
+      --exit-on-error=false
+      --model-control-mode=poll
+      --repository-poll-secs=30
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+
+  # MySQL database
+  db:
+    image: mysql:8.0
+    container_name: serendipity-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=serendipity
+      - MYSQL_DATABASE=serendipity
+      - MYSQL_USER=serendipity
+      - MYSQL_PASSWORD=serendipity
+    volumes:
+      - db-data:/var/lib/mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pserendipity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: serendipity-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+
+  # Prometheus metrics (optional)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: serendipity-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+    profiles:
+      - monitoring
+
+  # Grafana dashboards (optional)
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: serendipity-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=serendipity
+    restart: unless-stopped
+    networks:
+      - serendipity-network
+    profiles:
+      - monitoring
+
+volumes:
+  db-data:
+  redis-data:
+  api-logs:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  serendipity-network:
+    name: serendipity-gpu-network

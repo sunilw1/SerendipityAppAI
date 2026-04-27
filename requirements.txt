@@ -1,54 +1,116 @@
-# Serendipity AI Backend - Phase 1 Dependencies
+# Serendipity AI Backend - Phase 1 & Phase 2 Dependencies
 # Python 3.10+
 
-# Web Framework
+# =============================================================================
+# WEB FRAMEWORK
+# =============================================================================
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 python-multipart>=0.0.9
 
-# Data Processing
+# =============================================================================
+# DATA PROCESSING
+# =============================================================================
 pandas>=2.0.0
 numpy>=1.24.0
 polars>=0.20.0  # High-performance DataFrame for large datasets
 
-# Machine Learning & Scientific Computing
+# =============================================================================
+# MACHINE LEARNING & SCIENTIFIC COMPUTING
+# =============================================================================
 scikit-learn>=1.3.0
 scipy>=1.11.0
 
-# Database
+# =============================================================================
+# DATABASE
+# =============================================================================
 sqlalchemy>=2.0.0
 aiomysql>=0.2.0
 pymysql>=1.1.0
 cryptography>=42.0.0  # Required for MySQL authentication
 alembic>=1.13.0
 
-# Validation & Serialization
+# =============================================================================
+# VALIDATION & SERIALIZATION
+# =============================================================================
 pydantic>=2.6.0
 pydantic-settings>=2.1.0
 
-# Async Support
+# =============================================================================
+# ASYNC SUPPORT
+# =============================================================================
 httpx>=0.26.0
 aiofiles>=23.2.0
 
-# Geospatial
+# =============================================================================
+# GEOSPATIAL
+# =============================================================================
 geopy>=2.4.0
 
-# Time & Date
+# =============================================================================
+# TIME & DATE
+# =============================================================================
 python-dateutil>=2.8.0
 pytz>=2024.1
 
-# Logging & Monitoring
+# =============================================================================
+# LOGGING & MONITORING
+# =============================================================================
 structlog>=24.1.0
 prometheus-client>=0.19.0
 
-# Testing
+# =============================================================================
+# TESTING
+# =============================================================================
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
 
-# Development
+# =============================================================================
+# DEVELOPMENT
+# =============================================================================
 python-dotenv>=1.0.0
 
-# NVIDIA / GPU Acceleration (Phase 2+ - optional in Phase 1)
-# torch  # Uncomment when needed
-# tensorrt  # Uncomment when GPU optimization needed
+# =============================================================================
+# PHASE 3 - GRADIENT BOOSTING
+# =============================================================================
+lightgbm>=4.2.0  # LightGBM for delay/threat prediction models
+
+# =============================================================================
+# PHASE 3 - ONNX MODEL EXPORT
+# =============================================================================
+onnx>=1.15.0  # ONNX model format
+onnxmltools>=1.12.0  # Convert sklearn/lightgbm to ONNX
+skl2onnx>=1.16.0  # sklearn to ONNX converter
+
+# =============================================================================
+# PHASE 3 - AWS INTEGRATION
+# =============================================================================
+boto3>=1.34.0  # AWS SDK for S3 model storage
+
+# =============================================================================
+# PHASE 3 - NVIDIA / GPU ACCELERATION
+# =============================================================================
+# Install these on GPU-enabled instances:
+# torch>=2.0.0  # PyTorch for GPU inference
+# tensorrt>=8.6.0  # NVIDIA TensorRT for inference optimization
+# torch-tensorrt>=2.1.0  # PyTorch TensorRT integration
+# pycuda>=2022.2  # CUDA Python bindings
+
+# =============================================================================
+# PHASE 3 - TRITON INFERENCE SERVER
+# =============================================================================
+# Install on production GPU servers:
+# tritonclient[all]>=2.40.0  # Triton client library (gRPC + HTTP)
+
+# =============================================================================
+# PHASE 3 - DEMO DASHBOARD
+# =============================================================================
+streamlit>=1.30.0  # Interactive demo dashboard
+
+# =============================================================================
+# PHASE 2 - ADDITIONAL ML DEPENDENCIES (Optional)
+# =============================================================================
+# joblib is included with scikit-learn
+# hdbscan>=0.8.33  # For clustering (alternative to scipy hierarchical)
+# pyod>=1.1.0  # Python Outlier Detection library (optional alternative)

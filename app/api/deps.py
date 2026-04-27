@@ -5,9 +5,9 @@ API Dependencies
 Dependency injection for FastAPI routes.
 
 Provides:
-- Service instances
-- Database sessions (Phase 2+)
-- Authentication (Phase 2+)
+- Service instances (Phase 1 & Phase 2)
+- Database sessions
+- Authentication
 """
 
 from typing import Generator, Optional
@@ -22,6 +22,10 @@ from app.services.intelligence_service import (
 from app.services.baseline_service import (
     BaselineService,
     get_baseline_service,
+)
+from app.services.phase2_service import (
+    Phase2Service,
+    get_phase2_service,
 )
 
 
@@ -84,7 +88,17 @@ def verify_api_key(
     return True
 
 
-# Placeholder for database session (Phase 2+)
+def get_phase2_svc() -> Phase2Service:
+    """
+    Dependency for Phase 2 intelligence service.
+    
+    Returns:
+        Phase2Service instance
+    """
+    return get_phase2_service()
+
+
+# Placeholder for database session
 # def get_db() -> Generator:
 #     """Get database session."""
 #     from app.db.session import SessionLocal
